@@ -1,0 +1,96 @@
+PROJECT-2024
+------------
+1) Create infrastructure
+Jenkins+docker in one server
+
+
+#!/bin/bash
+sudo wget -O /etc/yum.repos.d/jenkins.repo \
+    https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+sudo yum upgrade
+# Add required dependencies for the jenkins package
+sudo yum install java-17
+sudo yum install jenkins
+sudo systemctl daemon-reload
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+hostname Jenkins-Sever
+sudo yum install git -y 
+
+
+
+yum install docker -y 
+
+sudo usermod -aG docker jenkins
+sudo systemctl restart jenkins
+
+Allow Passwordless sudo for Docker Commands
+
+Edit the sudoers file to allow Jenkins to run Docker commands without a password. Use visudo to edit the file:
+
+bash
+Copy code
+sudo visudo
+Add a line like this to grant passwordless sudo access to the Jenkins user for Docker commands:
+
+css
+Copy code
+jenkins ALL=(ALL) NOPASSWD: /usr/bin/docker
+Replace /usr/bin/docker with the path to your Docker binary if it's different.
+
+
+
+Jenkins file
+pipeline {
+    agent any
+
+    tools {
+        jdk 'java-17'
+        maven 'maven'
+    }
+
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/jaiswaladi246/Boardgame.git'
+            }
+        }
+
+        stage('Compile') {
+            steps {
+                sh "mvn compile"
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh "mvn package"
+            }
+        }
+
+        stage('Build & Tag Docker Image') {
+            steps {
+                script {
+                    sh " docker build -t manojkrishnappa/boardshack:latest ."
+                }
+            }
+        }
+
+        stage('Docker Image Scan') {
+            steps {
+                sh "trivy image --format table -o trivy-image-report.html manojkrishnappa/boardshack:latest"
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    sh " docker push manojkrishnappa/boardshack:latest"
+                }
+            }
+        }
+    }
+}
+
