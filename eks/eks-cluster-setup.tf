@@ -58,9 +58,6 @@ resource "aws_instance" "eks_instance" {
     # Create the EKS cluster
     eksctl create cluster --name microdegree --region us-east-1 --node-type t2.small --nodes-min 2 --nodes-max 2
 
-    # Deploy an Nginx container
-    kubectl create deployment demo-nginx --image=nginx --replicas=2 --port=80
-    kubectl expose deployment demo-nginx --port=80 --type=LoadBalancer
   EOF
 
   tags = {
