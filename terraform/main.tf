@@ -7,9 +7,10 @@ resource "aws_instance" "instance-1" {
     instance_type = "t2.micro"
     count = "1"
     security_groups = ["default"]
-    key_name = "kiran"
+    key_name = "project"
+    user_data = file("server-script.sh")
     tags = {
-      Name = "grafan"
+      Name = "CI-INTGRATION"
     }
 }
 
@@ -18,8 +19,9 @@ resource "aws_instance" "instance-2" {
     instance_type = "t2.micro"
     count = "1"
     security_groups = ["default"]
-    key_name = "kiran"
+    key_name = "project"
+    user_data = file("server-docker.sh")
     tags = {
-      Name = "Node-port"
+      Name = "DOCKER-SERVER"
     }
 }
