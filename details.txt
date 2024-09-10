@@ -1,59 +1,121 @@
 PROJECT-2024
 ------------
 1) Create infrastructure
-Jenkins+docker in one server
 
+To create master-server from local via terraform
 
+main.tf:
+--------
+provider "aws" {
+    region = "us-east-1"
+    access_key  = "YOUR_ACCESS_KEY"
+    secret_key  = "YOUR_SECRET_KEY"
+}
+
+resource "aws_instance" "instance-1" {
+    ami = "ami-066784287e358dad1"
+    instance_type = "t2.medium"
+    count = "1"
+    security_groups = ["default"]
+    key_name = "project"
+    user_data = file("server-script.sh")
+    tags = {
+      Name = "CI-INTGRATION"
+    }
+}
+
+server-script.sh
+----------------
 #!/bin/bash
-sudo wget -O /etc/yum.repos.d/jenkins.repo \
-    https://pkg.jenkins.io/redhat-stable/jenkins.repo
-sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
-sudo yum upgrade
-# Add required dependencies for the jenkins package
-sudo yum install java-17
-sudo yum install jenkins
-sudo systemctl daemon-reload
+sudo wget -O /usr/share/keyrings/jenkins-keyring.asc \
+  https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc]" \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt-get update
+sudo apt-get install jenkins -y
+sudo apt install fontconfig openjdk-17-jre -y
 sudo systemctl enable jenkins
 sudo systemctl start jenkins
-hostname Jenkins-Sever
-sudo yum install git -y 
+sudo systemctl status jenkins
+sudo hostname Master-server
+sudo apt-get install git
 
 
+2) install docker
 
-yum install docker -y 
-
-sudo usermod -aG docker jenkins
-sudo systemctl restart jenkins
-
-
-Allow Passwordless sudo for Docker Commands
-
-Edit the sudoers file to allow Jenkins to run Docker commands without a password. Use visudo to edit the file:
-
-bash
-Copy code
-sudo visudo
+3) once Jenkins up and ready
+    Allow Passwordless sudo for Docker Commands
+    Edit the sudoers file to allow Jenkins to run Docker commands without a password. Use visudo to edit the file:
+    sudo visudo
 Add a line like this to grant passwordless sudo access to the Jenkins user for Docker commands:
+        jenkins ALL=(ALL) NOPASSWD: /usr/bin/docker
 
-css
-Copy code
-jenkins ALL=(ALL) NOPASSWD: /usr/bin/docker
-Replace /usr/bin/docker with the path to your Docker binary if it's different.
-
+4) Install trivy for image scanning
 Trivy
 
-rpm -ivh https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.18.3_Linux-64bit.rpm
+wget https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.18.3_Linux-64bit.deb
+sudo dpkg -i trivy_0.18.3_Linux-64bit.deb
 
-eclipse temurin installer
-config file provider
-maaven integration
-docker
+5) add Jenkins plugins
+-----------------------
+Maven Integration
+Config File Provider
+Pipeline Maven Integration
+KubernetesVersion
+Kubernetes Credentials Provider
+Kubernetes CLI
+Kubernetes Client API
+Docker Pipeline
+
+7)trigger the terraform script for EKS cluster in different infra jenkins
+
+    - add IAM role to instance
+    - in Jenkins also the variable in secrete text
+
+8) install kubectl on both servers:
+------------------------------------------
+
+Install AWSCLI latest verison
+------------------------------------------
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
 
 
+Setup kubectl
+------------------------------------------
+a. Download kubectl version 1.29 b. Grant execution permissions to kubectl executable
+c. Move kubectl onto /usr/local/bin
+d. Test that your kubectl installation was successful
+
+curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.29.3/2024-04-19/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+mv ./kubectl /usr/local/bin
+kubectl version --client
+
+--------------------------------------------
+
+update the context in both servers
+aws eks update-kubeconfig --region us-east-1 --name microdegree-cluster
+
+kubectl get pods -n <namespace>
 
 
+9) create ns
+kubectl create ns microdegree
 
-Jenkins file
+10) create rolebinding and sa api tokens
+
+
+6)add docker hub credentials in credentils
+-------------------------------------------
+usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD
+
+7) in the git update the Jenkinsfile
+Jenkinsfile
+----------
+
 pipeline {
     agent any
 
@@ -61,7 +123,6 @@ pipeline {
         jdk 'java-17'
         maven 'maven'
     }
-
 
     stages {
         stage('Git Checkout') {
@@ -85,38 +146,60 @@ pipeline {
         stage('Build & Tag Docker Image') {
             steps {
                 script {
-                    sh " docker build -t manojkrishnappa/boardshack:latest ."
+                    sh "docker build -t manojkrishnappa/fullstack:10092024 ."
                 }
             }
         }
 
         stage('Docker Image Scan') {
             steps {
-                sh "trivy image --format table -o trivy-image-report.html manojkrishnappa/boardshack:latest"
+                sh "trivy image --format table -o trivy-image-report.html manojkrishnappa/fullstack:10092024"
+            }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin"
+                    }
+                }
             }
         }
 
         stage('Push Docker Image') {
             steps {
                 script {
-                    sh " docker push manojkrishnappa/boardshack:latest"
+                    sh "docker push manojkrishnappa/fullstack:10092024"
+                }
+            }
+        }
+
+        stage('Deploy To Kubernetes') {
+            steps {
+               withKubeConfig(caCertificate: '', clusterName: ' microdegree-cluster', contextName: '', credentialsId: 'kube', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://4ffa54bb1931f674398d2675f0357b16.gr7.us-east-1.eks.amazonaws.com') {
+                        sh "aws eks update-kubeconfig --region us-east-1 --name microdegree-cluster"
+                        sh "kubectl apply -f deployment-service.yaml -n microdegree"
+                }
+            }
+        }
+
+        stage('Verify the Deployment') {
+            steps {
+               withKubeConfig(caCertificate: '', clusterName: ' microdegree-cluster', contextName: '', credentialsId: 'kube', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://4ffa54bb1931f674398d2675f0357b16.gr7.us-east-1.eks.amazonaws.com') {
+                        sh "kubectl get pods -n microdegree"
+                        sh "kubectl get svc -n microdegree"
                 }
             }
         }
     }
 }
+}
+
+
+
+We can enable monitoring for this
 
 
 
 
-
-Maven Integration
-Config File Provider
-Pipeline Maven Integration
-KubernetesVersion
-Kubernetes Credentials Provider
-Kubernetes CLI
-Kubernetes Client API
-Docker Pipeline
-
-aws eks update-kubeconfig --region us-east-1 --name microdegree-cluster
