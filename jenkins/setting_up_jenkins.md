@@ -175,5 +175,5 @@ type: kubernetes.io/service-account-token
 metadata:  
   name: mysecretname  
   annotations:    
-    kubernetes.io/service-account.name: myserviceaccount
+    kubernetes.io/service-account.name: jenkins
 ```
