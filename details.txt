@@ -25,6 +25,7 @@ yum install docker -y
 sudo usermod -aG docker jenkins
 sudo systemctl restart jenkins
 
+
 Allow Passwordless sudo for Docker Commands
 
 Edit the sudoers file to allow Jenkins to run Docker commands without a password. Use visudo to edit the file:
@@ -39,6 +40,9 @@ Copy code
 jenkins ALL=(ALL) NOPASSWD: /usr/bin/docker
 Replace /usr/bin/docker with the path to your Docker binary if it's different.
 
+Trivy
+
+rpm -ivh https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.18.3_Linux-64bit.rpm
 
 
 Jenkins file
