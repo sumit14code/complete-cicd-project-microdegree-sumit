@@ -106,3 +106,17 @@ pipeline {
     }
 }
 
+
+
+
+
+Maven Integration
+Config File Provider
+Pipeline Maven Integration
+KubernetesVersion
+Kubernetes Credentials Provider
+Kubernetes CLI
+Kubernetes Client API
+Docker Pipeline
+
+aws eks update-kubeconfig --region us-east-1 --name microdegree-cluster
