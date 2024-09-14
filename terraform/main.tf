@@ -3,25 +3,12 @@ provider "aws" {
 }
 
 resource "aws_instance" "instance-1" {
-    ami = "ami-066784287e358dad1"
-    instance_type = "t2.micro"
-    count = "1"
-    security_groups = ["default"]
-    key_name = "project"
-    user_data = file("server-script.sh")
-    tags = {
-      Name = "CI-INTGRATION"
-    }
-}
-
-resource "aws_instance" "instance-2" {
-    ami = "ami-066784287e358dad1"
-    instance_type = "t2.micro"
-    count = "1"
-    security_groups = ["default"]
-    key_name = "project"
-    user_data = file("server-docker.sh")
-    tags = {
-      Name = "DOCKER-SERVER"
-    }
+  ami           = "ami-0e86e20dae9224db8"
+  instance_type = "t2.medium"
+  security_groups = ["default"]
+  key_name = "project"
+  user_data = file("server-script.sh")
+  tags ={
+    Name = "MASTER-SERVER"
+  }
 }
