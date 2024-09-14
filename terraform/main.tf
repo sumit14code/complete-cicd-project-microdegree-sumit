@@ -12,3 +12,5 @@ resource "aws_instance" "instance-1" {
     Name = "MASTER-SERVER"
   }
 }
+
+

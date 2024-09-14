@@ -7,9 +7,9 @@ output "node_group_id" {
 }
 
 output "vpc_id" {
-  value = aws_vpc.microdegree_vpc.id
+  value = data.aws_vpc.default.id
 }
 
 output "subnet_ids" {
-  value = aws_subnet.microdegree_subnet[*].id
+  value = data.aws_subnets.default.ids
 }
