@@ -30,7 +30,7 @@ pipeline {
         stage('Approval') {
             steps {
                 script {
-                    def plan = readFile 'terraform/Jenkinsfile/tfplan.txt'
+                    def plan = readFile 'terraform/tfplan.txt'
                     input message: "Do you want to proceed with the Terraform action?",
                     parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
                 }
@@ -46,9 +46,9 @@ pipeline {
             steps {
                 script {
                     if (params.terraformAction == 'apply') {
-                        sh "pwd;cd terraform/Jenkinsfile/ ; terraform apply -input=false tfplan"
+                        sh "pwd;cd terraform/ ; terraform apply -input=false tfplan"
                     } else if (params.terraformAction == 'destroy') {
-                        sh "pwd;cd terraform/Jenkinsfile/ ; terraform destroy -auto-approve"
+                        sh "pwd;cd terraform/ ; terraform destroy -auto-approve"
                     }
                 }
             }
