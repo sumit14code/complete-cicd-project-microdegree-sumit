@@ -3,13 +3,22 @@ provider "aws" {
 }
 
 resource "aws_instance" "instance-1" {
-  ami           = "ami-0e86e20dae9224db8"
-  instance_type = "t2.medium"
+  ami           = "ami-0fff1b9a61dec8a5f"
+  instance_type = "t2.micro"
   security_groups = ["default"]
   key_name = "project"
-  user_data = file("server-script.sh")
   tags ={
-    Name = "MASTER-SERVER"
+    Name = "grafana-server"
+  }
+}
+
+resource "aws_instance" "instance-2" {
+  ami           = "ami-0fff1b9a61dec8a5f"
+  instance_type = "t2.micro"
+  security_groups = ["default"]
+  key_name = "project"
+  tags ={
+    Name = "node-expo"
   }
 }
 
