@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER_TAG = "20241003"
         IMAGE_NAME = "manojkrishnappa/fullstack"
-        AWS_REGION = "us-east-1"
+        AWS_REGION = "ap-south-1"
         CLUSTER_NAME = "microdegree-cluster"
     }
 
@@ -16,7 +16,7 @@ pipeline {
     stages {
         stage('Git Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/ManojKRISHNAPPA/complete-cicd-project-microdegree.git'
+                git branch: 'main', url: 'https://github.com/sumit14code/complete-cicd-project-microdegree-sumit.git'
             }
         }
 
@@ -118,9 +118,9 @@ pipeline {
                 emailext (
                     subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
                     body: body,
-                    to: 'jagdishsiddaiah2408@gmail.com',
-                    from: 'manojdevopstest@gmail.com',
-                    replyTo: 'manojdevopstest@gmail.com',
+                    to: 'hsumit26@gmail.com',
+                    from: 'hshashank24@gmail.com',
+                    replyTo: 'hshashank24@gmail.com',
                     mimeType: 'text/html',
                     attachmentsPattern: 'trivy-image-report.html'
                 )
